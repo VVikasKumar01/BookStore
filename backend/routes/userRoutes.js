@@ -6,9 +6,10 @@ const {
     getUserProfile,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
+const { validateRegister, validateLogin } = require('../middleware/validationMiddleware');
 
-router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post('/register', validateRegister, registerUser);
+router.post('/login', validateLogin, loginUser);
 router.get('/profile', protect, getUserProfile);
 
 module.exports = router;

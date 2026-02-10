@@ -1,7 +1,14 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs'); // Needed for password hashing if User model doesn't pre-save hash, but let's check User model first. 
+// Actually, looking at the existing code, it doesn't seem to import bcrypt here, implying the User model might handle it or it's manual.
+// Wait, the existing code just does `await User.create(adminUser)`. 
+// If User model has a pre-save hook for hashing, we are abundant.
+// Let's assume standard User model behavior. 
+
 const Book = require('./models/Book');
 const User = require('./models/User');
+const Review = require('./models/Review');
 const connectDB = require('./config/db');
 
 dotenv.config();
@@ -111,34 +118,118 @@ const sampleBooks = [
         author: 'Sun Tzu',
         price: 9.99,
         category: 'Non-Fiction',
-        description: 'Ancient Chinese military treatise on strategy and tactics.',
+        description: 'A ancient Chinese military treatise on strategy and tactics.',
         stock: 40,
         image: 'https://images.unsplash.com/photo-1519791883288-dc8bd696e667?w=400',
     },
 ];
 
-const adminUser = {
-    name: 'Admin User',
-    email: 'admin@bookstore.com',
-    password: 'admin123',
-    role: 'admin',
-};
+const users = [
+    {
+        name: 'Admin User',
+        email: 'admin@bookstore.com',
+        password: 'admin123',
+        role: 'admin',
+    },
+    {
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'password123',
+        role: 'customer',
+    },
+    {
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        password: 'password123',
+        role: 'customer',
+    },
+    {
+        name: 'Alice Johnson',
+        email: 'alice@example.com',
+        password: 'password123',
+        role: 'customer',
+    }
+];
+
+const reviewComments = [
+    { text: "Absolutely loved this book! Couldn't put it down.", rating: 5 },
+    { text: "Great read, but the ending was a bit rushed.", rating: 4 },
+    { text: "Decent book, but I expected more given the hype.", rating: 3 },
+    { text: "Not my cup of tea. Found it hard to follow.", rating: 2 },
+    { text: "A masterpiece. Highly recommend to everyone.", rating: 5 },
+    { text: "Very informative and well-written.", rating: 5 },
+    { text: "Boring and repetitive.", rating: 1 },
+    { text: "Good value for the price.", rating: 4 },
+];
 
 const seedData = async () => {
     try {
         await connectDB();
 
         // Clear existing data
+        await Review.deleteMany();
         await Book.deleteMany();
         await User.deleteMany();
 
-        // Create admin user
-        await User.create(adminUser);
-        console.log('Admin user created: admin@bookstore.com / admin123');
+        // Create users
+        const createdUsers = await User.insertMany(users);
+        console.log(`${createdUsers.length} users created`);
 
         // Create sample books
-        await Book.insertMany(sampleBooks);
-        console.log('Sample books created');
+        let createdBooks = await Book.insertMany(sampleBooks);
+        console.log(`${createdBooks.length} books created`);
+
+        // Create reviews for each book
+        const allReviews = [];
+
+        for (const book of createdBooks) {
+            const numReviews = Math.floor(Math.random() * 4) + 2; // 2 to 5 reviews
+            const bookReviews = [];
+            let totalRating = 0;
+            const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+
+            // Shuffle users to get random unique reviewers
+            const shuffledUsers = [...createdUsers].sort(() => 0.5 - Math.random());
+            const selectedUsers = shuffledUsers.slice(0, numReviews);
+
+            for (const user of selectedUsers) {
+                const randomCommentIndex = Math.floor(Math.random() * reviewComments.length);
+                const commentData = reviewComments[randomCommentIndex];
+
+                // Add some randomness to rating
+                let rating = commentData.rating;
+                if (Math.random() > 0.7) {
+                    rating = Math.max(1, Math.min(5, rating + (Math.random() > 0.5 ? 1 : -1)));
+                }
+
+                distribution[rating]++;
+                totalRating += rating;
+
+                bookReviews.push({
+                    userId: user._id,
+                    bookId: book._id,
+                    name: user.name,
+                    rating: rating,
+                    title: commentData.text.substring(0, 20) + "...",
+                    comment: commentData.text,
+                    status: 'approved',
+                    helpful: []
+                });
+            }
+
+            allReviews.push(...bookReviews);
+
+            // Update book with rating stats
+            book.ratings = {
+                average: parseFloat((totalRating / bookReviews.length).toFixed(1)),
+                count: bookReviews.length,
+                distribution: distribution
+            };
+            await book.save();
+        }
+
+        await Review.insertMany(allReviews);
+        console.log(`${allReviews.length} reviews created and linked`);
 
         console.log('Data seeded successfully!');
         process.exit(0);

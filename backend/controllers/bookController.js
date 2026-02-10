@@ -5,7 +5,8 @@ const Book = require('../models/Book');
 // @access  Public
 const getBooks = async (req, res) => {
     try {
-        const pageSize = 12;
+        console.log('[DEBUG] getBooks called');
+        const pageSize = Number(req.query.pageSize) || 12;
         const page = Number(req.query.page) || 1;
         const keyword = req.query.keyword
             ? {
@@ -17,13 +18,16 @@ const getBooks = async (req, res) => {
             : {};
         const category = req.query.category ? { category: req.query.category } : {};
 
+        console.log(`[DEBUG] Querying Books with: ${JSON.stringify({ ...keyword, ...category })}`);
         const count = await Book.countDocuments({ ...keyword, ...category });
         const books = await Book.find({ ...keyword, ...category })
             .limit(pageSize)
             .skip(pageSize * (page - 1));
 
+        console.log(`[DEBUG] Found ${books.length} books`);
         res.json({ books, page, pages: Math.ceil(count / pageSize), count });
     } catch (error) {
+        console.error('[CRITICAL ERROR] getBooks failed:', error);
         res.status(500).json({ message: error.message });
     }
 };

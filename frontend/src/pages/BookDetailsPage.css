@@ -151,6 +151,31 @@
     text-decoration: none;
     border-radius: 8px;
 }
+/* Login to Review Prompt */
+.login-to-review {
+    background: rgba(52, 152, 219, 0.1);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.login-to-review p {
+    color: #bdc3c7;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.login-to-review a {
+    color: #3498db;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.login-to-review a:hover {
+    text-decoration: underline;
+}
 
 /* Tablet Breakpoint */
 @media (max-width: 1024px) {

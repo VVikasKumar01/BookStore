@@ -39,8 +39,8 @@ const RatingDisplay = ({ ratings }) => {
         <div className="rating-display">
             <div className="rating-summary">
                 <div className="average-rating">
-                    <span className="rating-number">{average.toFixed(1)}</span>
-                    {renderStars(average)}
+                    <span className="rating-number">{average?.toFixed(1) || '0.0'}</span>
+                    {renderStars(average || 0)}
                     <span className="rating-count">{count} {count === 1 ? 'review' : 'reviews'}</span>
                 </div>
             </div>

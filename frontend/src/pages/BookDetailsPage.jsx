@@ -28,11 +28,8 @@ const BookDetailsPage = () => {
 
     const fetchReviews = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/${id}`);
-            if (response.ok) {
-                const data = await response.json();
-                setReviews(data);
-            }
+            const { data } = await api.get(`/reviews/${id}`);
+            setReviews(data);
         } catch (err) {
             console.error('Error fetching reviews:', err);
         }
@@ -119,11 +116,17 @@ const BookDetailsPage = () => {
                 )}
 
                 {/* Review Form - Only for logged-in users */}
-                {userInfo && (
+                {userInfo ? (
                     <ReviewForm
                         bookId={id}
                         onReviewSubmitted={handleReviewSubmitted}
                     />
+                ) : (
+                    <div className="login-to-review">
+                        <p>
+                            Please <Link to="/login" state={{ from: `/book/${id}` }}>login</Link> to write a review.
+                        </p>
+                    </div>
                 )}
 
                 {/* Reviews List */}

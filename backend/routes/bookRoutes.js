@@ -8,14 +8,15 @@ const {
     deleteBook,
 } = require('../controllers/bookController');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { validateBookArgs } = require('../middleware/validationMiddleware');
 
 // Public routes
 router.get('/', getBooks);
 router.get('/:id', getBookById);
 
 // Admin routes
-router.post('/', protect, admin, createBook);
-router.put('/:id', protect, admin, updateBook);
+router.post('/', protect, admin, validateBookArgs, createBook);
+router.put('/:id', protect, admin, validateBookArgs, updateBook);
 router.delete('/:id', protect, admin, deleteBook);
 
 module.exports = router;

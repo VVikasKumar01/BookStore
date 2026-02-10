@@ -7,6 +7,9 @@ const connectDB = require('./config/db');
 dotenv.config();
 
 // Connect to database
+// connectDB() is async, so we should wait or at least log when it's done. 
+// Ideally we should start server after connection, but for now let's just log.
+console.log(`[DEBUG] Attempting to connect to MongoDB URI: ${process.env.MONGO_URI ? process.env.MONGO_URI.replace(/:([^:@]+)@/, ':****@') : 'UNDEFINED'}`);
 connectDB();
 
 const app = express();
@@ -37,5 +40,20 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Health Check Endpoint
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'UP', timestamp: new Date() });
+});
+
+// Handle Uncaught Exceptions
+process.on('uncaughtException', (err) => {
+    console.error('[CRITICAL] Uncaught Exception:', err);
+    // Keep server running if possible, but logging is key
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('[CRITICAL] Unhandled Rejection:', err);
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

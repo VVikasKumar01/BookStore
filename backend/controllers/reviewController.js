@@ -1,5 +1,6 @@
 const Review = require('../models/Review');
 const Book = require('../models/Book');
+const Order = require('../models/Order');
 
 // @desc    Get reviews for a book
 // @route   GET /api/reviews/:bookId
@@ -56,6 +57,15 @@ const createReview = async (req, res) => {
             return res.status(400).json({ message: 'You have already reviewed this book' });
         }
 
+        // Check for verified purchase
+        const order = await Order.findOne({
+            user: req.user._id,
+            'orderItems.product': bookId,
+            isPaid: true
+        });
+
+        const isVerifiedPurchase = !!order;
+
         // Create review
         const review = await Review.create({
             userId: req.user._id,
@@ -63,7 +73,7 @@ const createReview = async (req, res) => {
             rating,
             title,
             comment,
-            verifiedPurchase: false, // TODO: Check if user purchased this book
+            verifiedPurchase: isVerifiedPurchase,
         });
 
         // Update book ratings
